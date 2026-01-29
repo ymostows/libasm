@@ -1,111 +1,199 @@
 #include "libasm.h"
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <errno.h>
 
-/* Macros pour simplifier l'affichage et réduire le code */
-#define CYAN "\033[1;36m"
-#define RESET "\033[0m"
-#define TEST(name) printf(CYAN "\n=== %s ===\n" RESET, name)
+void test_ft_strlen()
+{
+    printf("ft_strlen\n");
+    char *normal = "Hello !";
+    printf("strlen : %zu / ft_strlen : %zu\n", strlen(normal), ft_strlen(normal));
 
-void check_strlen() {
-    TEST("FT_STRLEN");
-    const char *long_str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
-    
-    // Test 1: Empty string
-    printf("Empty:   libc=%zu | asm=%zu\n", strlen(""), ft_strlen(""));
-    // Test 2: Long string
-    printf("Long:    libc=%zu | asm=%zu\n", strlen(long_str), ft_strlen(long_str));
+    char *empty = "";
+    printf("strlen : %zu / ft_strlen : %zu\n", strlen(empty), ft_strlen(empty));
+
+    char *long_str = malloc(1000001);
+    if (long_str)
+    {
+        memset(long_str, 'a', 1000000);
+        long_str[1000000] = '\0';
+        printf("strlen : %zu / ft_strlen : %zu\n", strlen(long_str), ft_strlen(long_str));
+        free(long_str);
+    }
 }
 
-void check_strcpy() {
-    TEST("FT_STRCPY");
-    char d1[200], d2[200];
-    const char *long_str = "Une phrase très longue pour tester le buffer overflow et la copie correcte.";
+void test_ft_strcpy()
+{
+    printf("\n\nft_strcpy\n");
+    char dest_norm[100];
+    char *src_norm = "Hello !";
+    char *ret_norm = ft_strcpy(dest_norm, src_norm);
+    printf("[%s] -> [%s]\n", src_norm, dest_norm);
+    printf("Pointer : %s\n", (ret_norm == dest_norm ? "OK" : "KO"));
 
-    // Test 1: Empty string
-    printf("Empty:   libc='%s' | asm='%s'\n", strcpy(d1, ""), ft_strcpy(d2, ""));
-    // Test 2: Long string
-    printf("Long:    libc='%s' | asm='%s'\n", strcpy(d1, long_str), ft_strcpy(d2, long_str));
+    char dest_empty[10];
+    char *ret_empty = ft_strcpy(dest_empty, "");
+    printf("Source [] -> Dest [%s]\n", dest_empty);
+    printf("Pointer : %s\n", (ret_empty == dest_empty ? "OK" : "KO"));
+
+    char *long_src = malloc(1000001);
+    char *long_dest = malloc(1000001);
+    if (long_src && long_dest)
+    {
+        memset(long_src, 'A', 1000000);
+        long_src[1000000] = '\0';
+        
+        char *ret_long = ft_strcpy(long_dest, long_src);
+        
+        printf("Long : ");
+        if (strlen(long_dest) == 1000000 && long_dest[0] == 'A')
+            printf("Success !\n");
+        else
+            printf("Failure !\n");
+        printf("Pointer : %s\n", (ret_long == long_dest ? "OK" : "KO"));
+    }
+    free(long_src);
+    free(long_dest);
+    printf("\n");
 }
 
-void check_strcmp() {
-    TEST("FT_STRCMP");
-    //
-    printf("Empty/Empty: libc=%d | asm=%d\n", strcmp("", ""), ft_strcmp("", ""));
-    printf("Empty/First: libc=%d | asm=%d\n", strcmp("", "A"), ft_strcmp("", "A"));
-    printf("Empty/Secnd: libc=%d | asm=%d\n", strcmp("A", ""), ft_strcmp("A", ""));
-    printf("Equal:       libc=%d | asm=%d\n", strcmp("Hello", "Hello"), ft_strcmp("Hello", "Hello"));
-    printf("Diff:        libc=%d | asm=%d\n", strcmp("Hello", "World"), ft_strcmp("Hello", "World"));
+void test_ft_strcmp()
+{
+    printf("\nft_strcmp\n");
+
+    char *empty = "";
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(empty, empty), ft_strcmp(empty, empty));
+
+    char *str = "Hello";
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(empty, str), ft_strcmp(empty, str));
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(str, empty), ft_strcmp(str, empty));
+
+    char *s1 = "Hello";
+    char *s2 = "Hello";
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(s1, s2), ft_strcmp(s1, s2));
+
+    char *s3 = "Hella";
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(s1, s3), ft_strcmp(s1, s3));
+    printf("strcmp : %d / ft_strcmp : %d\n", strcmp(s3, s1), ft_strcmp(s3, s1));
 }
 
-void check_strdup() {
-    TEST("FT_STRDUP");
-    char *s1, *s2;
-    const char *long_str = "Test d'allocation dynamique avec une chaine assez longue.";
+void test_ft_write()
+{
+    printf("\nft_write\n");
+    char *msg = "Hello !";
+    int len = strlen(msg);
 
-    // Test 1: Empty string
-    s1 = strdup(""); s2 = ft_strdup("");
-    printf("Empty:   libc='%s' | asm='%s'\n", s1, s2);
-    free(s1); free(s2); // Toujours free
+    printf("write : ");
+    fflush(stdout);
+    ssize_t r1 = write(1, msg, len);
+    printf("\nreturn : %zd\n", r1);
 
-    // Test 2: Long string
-    s1 = strdup(long_str); s2 = ft_strdup(long_str);
-    printf("Long:    libc='%s' | asm='%s'\n", s1, s2);
-    free(s1); free(s2);
-}
-
-void check_write() {
-    TEST("FT_WRITE");
+    printf("ft_write : ");
+    fflush(stdout);
+    ssize_t r2 = ft_write(1, msg, len);
+    printf("\nreturn : %zd\n", r2);
     int fd = open("test_write.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    
-    // Test 1: Stdout
-    printf("[STDOUT] "); fflush(stdout);
-    ft_write(1, "Test\n", 5);
-    
-    // Test 2: File Open
-    ft_write(fd, "File test", 9);
-    printf("Write to file 'test_write.txt': OK\n");
-    close(fd);
+    if (fd != -1)
+    {
+        ssize_t file_ret = ft_write(fd, "File test", 9);
+        printf("Open file (fd %d) : ft_write return = %zd\n", fd, file_ret);
+        close(fd);
+    }
 
-    // Test 3: Wrong FD & Return Value & Errno
     errno = 0;
-    int ret = ft_write(-1, "Fail", 4);
-    printf("Bad FD:  ret=%d | errno=%d (Expected -1 | 9)\n", ret, errno);
+    ssize_t err1 = write(-1, msg, len);
+    int e1 = errno;
+
+    errno = 0;
+    ssize_t err2 = ft_write(-1, msg, len);
+    int e2 = errno;
+    printf("Error (wrong fd) : write = %zd (errno %d) / ft_write = %zd (errno %d)\n", 
+            err1, e1, err2, e2);
+
+    printf("Empty : write = %zd / ft_write = %zd\n", 
+            write(1, "", 0), ft_write(1, "", 0));
 }
 
-void check_read() {
-    TEST("FT_READ");
-    char buf[100];
-    int fd = open("test_write.txt", O_RDONLY); // On réutilise le fichier créé par write
+void test_ft_read()
+{
+    printf("\nft_read\n");
+    char buffer1[512];
+    char buffer2[512];
+    ssize_t r1, r2;
 
-    // Test 1: Open File
-    int ret = ft_read(fd, buf, 9);
-    buf[ret] = '\0';
-    printf("File:    ret=%d | content='%s'\n", ret, buf);
-    close(fd);
+    printf("Stdin test : ");
+    fflush(stdout);
+    r1 = ft_read(0, buffer1, 511);
+    if (r1 >= 0) buffer1[r1] = '\0';
+    printf("return : %zd | content : %s\n", r1, buffer1);
 
-    // Test 2: Wrong FD & Return Value
+    int fd = open("test_write.txt", O_RDONLY);
+    if (fd != -1)
+    {
+        memset(buffer1, 0, 512);
+        memset(buffer2, 0, 512);
+        
+        r1 = read(fd, buffer1, 12);
+        lseek(fd, 0, SEEK_SET);
+        r2 = ft_read(fd, buffer2, 12);
+        
+        printf("read    : %zd / buffer : [%s]\n", r1, buffer1);
+        printf("ft_read : %zd / buffer : [%s]\n", r2, buffer2);
+        close(fd);
+    }
+
     errno = 0;
-    ret = ft_read(-1, buf, 10);
-    printf("Bad FD:  ret=%d | errno=%d (Expected -1 | 9)\n", ret, errno);
+    ssize_t err1 = read(-1, buffer1, 10);
+    int e1 = errno;
 
-    // Test 3: Stdin
-    printf(CYAN "Test Stdin (Type something + Enter): " RESET); fflush(stdout);
-    ret = ft_read(0, buf, 99);
-    if (ret > 0) buf[ret - 1] = 0; // Enlever le newline pour l'affichage
-    printf("Stdin:   read='%s'\n", buf);
+    errno = 0;
+    ssize_t err2 = ft_read(-1, buffer2, 10);
+    int e2 = errno;
+    printf("Error (wrong fd) : read = %zd (errno %d) / ft_read = %zd (errno %d)\n", 
+            err1, e1, err2, e2);
+
+    printf("Empty : read = %zd / ft_read = %zd\n", 
+            read(1, buffer1, 0), ft_read(1, buffer2, 0));
 }
 
-int main() {
-    check_strlen();
-    check_strcpy();
-    check_strcmp();
-    check_strdup();
-    check_write();
-    check_read();
+void test_ft_strdup()
+{
+    printf("\nft_strdup\n");
+
+    char *empty = "";
+    char *r1 = ft_strdup(empty);
+    printf("Empty : original [%s] / copy [%s]\n", empty, r1);
+    printf("Different pointers ? %s\n", (r1 != empty ? "YES" : "NO"));
+    free(r1);
+
+    char *norm = "Hello !";
+    char *r2 = ft_strdup(norm);
+    printf("Normal : original [%s] / copy [%s]\n", norm, r2);
+    free(r2);
+
+    char *long_str = malloc(1000001);
+    if (long_str)
+    {
+        memset(long_str, 'Z', 1000000);
+        long_str[1000000] = '\0';
+        
+        char *r3 = ft_strdup(long_str);
+        
+        printf("Long : ");
+        if (r3 && strlen(r3) == 1000000 && r3[0] == 'Z')
+            printf("Success !\n");
+        else
+            printf("Failure !\n");
+            
+        free(long_str);
+        free(r3);
+    }
+}
+
+int main(void)
+{
+    test_ft_strlen();
+    test_ft_strcpy();
+    test_ft_strcmp();
+    test_ft_write();
+    test_ft_read();
+    test_ft_strdup();
     return (0);
 }
